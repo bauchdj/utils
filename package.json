@@ -23,6 +23,9 @@
 		"type": "git",
 		"url": "https://github.com/better-auth/utils"
 	},
+	"dependencies": {
+		"@noble/hashes": "^1.7.1"
+	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@types/node": "^22.10.1",
@@ -76,6 +79,16 @@
 		"./rsa": {
 			"import": "./dist/rsa.mjs",
 			"require": "./dist/rsa.cjs"
+		},
+		"./scrypt": {
+			"node": {
+				"import": "./dist/scrypt-node.mjs",
+				"require": "./dist/scrypt-node.cjs"
+			},
+			"default": {
+				"import": "./dist/scrypt.mjs",
+				"require": "./dist/scrypt.cjs"
+			}
 		}
 	},
 	"files": ["dist"]
