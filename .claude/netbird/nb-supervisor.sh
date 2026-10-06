@@ -51,17 +51,23 @@ ensure_sshd() {
 	fi
 	sed -i "s/^ListenAddress .*/ListenAddress $ip/" "$SSHD_DIR/sshd_config"
 	mkdir -p /run/sshd
-	/usr/sbin/sshd -f "$SSHD_DIR/sshd_config" -E "$SSHD_DIR/sshd.log" && log "sshd on $ip:22"
+	/usr/sbin/sshd -f "$SSHD_DIR/sshd_config" -E "$SSHD_DIR/sshd.log"
+	sleep 1
+	# bind fails until the NetBird interface has its IP; retried next loop
+	pgrep -f "sshd -f $SSHD_DIR/sshd_config" >/dev/null && log "sshd on $ip:22"
 }
 
 home_relay() { timeout 10 netbird status -d 2>/dev/null | grep -oE 'rels://[^]]+' | head -1; }
 connected_count() { nb_field "sum(p['status']=='Connected' for p in d['peers']['details'])"; }
 
 poke_peers() { # outbound traffic wakes lazy connections
+	local pids=()
 	for ip in $(nb_field "' '.join(p['netbirdIp'] for p in d['peers']['details'])"); do
 		timeout 2 bash -c "</dev/tcp/$ip/22" >/dev/null 2>&1 &
+		pids+=($!)
 	done
-	wait
+	# wait only for the pokes; a bare `wait` would block on the netbird daemon
+	[ ${#pids[@]} -gt 0 ] && wait "${pids[@]}"
 }
 
 wait_connected() {
